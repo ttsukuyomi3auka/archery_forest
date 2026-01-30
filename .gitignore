@@ -1,0 +1,78 @@
+# =============== #
+# Unity generated #
+# =============== #
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+
+# MemoryCaptures can get excessive in size.
+# They also could contain extremely sensitive data
+[Mm]emoryCaptures/
+
+# Asset meta data should only be ignored when the corresponding asset is also ignored
+!/[Aa]ssets/**/*.meta
+!/[Pp]ackages/**/*.meta
+
+# Unity3D generated meta files
+*.pidb.meta
+*.pdb.meta
+
+# Unity3D generated file on crash reports
+sysinfo.txt
+
+# Builds
+*.apk
+*.aab
+*.unitypackage
+
+# Crashlytics generated file
+crashlytics-build.properties
+
+# ===================================== #
+# Visual Studio / MonoDevelop generated #
+# ===================================== #
+.idea/
+.vscode/
+.vs/
+*.pidb
+*.suo
+*.sln
+*.csproj
+*.userprefs
+*.user
+*.unityproj
+*.booproj
+
+# OS generated
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+[Tt]humbs.db
+Desktop.ini
+
+# Visual Studio Code
+.vscode/*
+
+# JetBrains Rider
+.idea/
+
+# ============ #
+# OS generated #
+# ============ #
+*.log*
+*.tmp
+*.orig
+*~
+
+# =============== #
+# Package Manager #
+# =============== #
+Packages/manifest.json
+Packages/packages-lock.json
