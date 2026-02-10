@@ -18,7 +18,6 @@ namespace Valve.VR.InteractionSystem
         public UnityEvent onTakeDamage;
         public Transform targetCenter; // Центр мишени
         public float targetRadius = 0.31f; // Исправлено: должен быть равен максимальному радиусу зон
-        public bool is3DTarget = false; // true - объемная мишень, false - плоская (игнорировать Z)
 
         [Header("Score Zones")]
         public ScoreZone[] scoreZones;
@@ -26,10 +25,6 @@ namespace Valve.VR.InteractionSystem
         [Header("Sound")]
         public AudioClip hitSound;
         public AudioClip missSound;
-
-        [Header("Visual Feedback")]
-        public ParticleSystem hitParticle;
-        public ParticleSystem missParticle;
 
         private AudioSource audioSource;
         private Renderer targetRenderer;
@@ -63,37 +58,10 @@ namespace Valve.VR.InteractionSystem
             {
                 originalMaterial = targetRenderer.material;
             }
-            // Проверка ориентации мишени
-            CheckTargetOrientation();
 
             // Автоматически определяем радиус если не задан или меньше максимального
             UpdateTargetRadius();
         }
-
-        void CheckTargetOrientation()
-        {
-            if (targetCenter != null)
-            {
-                Debug.Log($"=== ОРИЕНТАЦИЯ МИШЕНИ ===");
-                Debug.Log($"Позиция мишени: {transform.position}");
-                Debug.Log($"Поворот мишени: {transform.eulerAngles}");
-                Debug.Log($"Центр мишени: {targetCenter.position}");
-                Debug.Log($"Размер мишени: {targetRadius * 2}м в диаметре");
-
-                // Проверяем в какую сторону смотрит мишень
-                Debug.Log($"Право (right): {transform.right}");
-                Debug.Log($"Вверх (up): {transform.up}");
-                Debug.Log($"Вперед (forward): {transform.forward}");
-
-                // Для плоской мишени forward должен указывать на игрока
-                if (!is3DTarget)
-                {
-                    Debug.Log($"Мишень плоская (is3DTarget = false)");
-                    Debug.Log($"Будет использоваться 2D расстояние (X, Y)");
-                }
-            }
-        }
-
         void InitializeScoreZones()
         {
             // Если зоны еще не инициализированы, создаем стандартные
@@ -111,8 +79,6 @@ namespace Valve.VR.InteractionSystem
                     new ScoreZone { zoneName = "10", radius = 0.30f, scoreValue = 10, gizmoColor = Color.green },
                     new ScoreZone { zoneName = "Outer Ring", radius = 0.31f, scoreValue = 0, gizmoColor = Color.blue }
                 };
-
-                Debug.Log("Score zones инициализированы стандартными значениями");
             }
         }
 
@@ -131,7 +97,6 @@ namespace Valve.VR.InteractionSystem
             if (targetRadius < maxZoneRadius || targetRadius <= 0)
             {
                 targetRadius = maxZoneRadius;
-                Debug.Log($"Target radius обновлен до {targetRadius} (максимальный радиус зон)");
             }
         }
 
@@ -141,7 +106,6 @@ namespace Valve.VR.InteractionSystem
             centerObj.transform.SetParent(transform);
             centerObj.transform.localPosition = Vector3.zero;
             targetCenter = centerObj.transform;
-            Debug.Log("Target center создан автоматически");
         }
 
         // Этот метод вызывается стрелой при попадании
@@ -163,8 +127,6 @@ namespace Valve.VR.InteractionSystem
             // 1. Рассчитываем расстояние до центра
             float distance = CalculateDistanceToCenter(hitPoint);
 
-            Debug.Log($"Расстояние до центра: {distance:F3}m, Target Radius: {targetRadius:F3}m");
-
             // 2. Если попадание за пределами круга - это промах
             if (distance > targetRadius)
             {
@@ -183,13 +145,9 @@ namespace Valve.VR.InteractionSystem
                 {
                     score = scoreZones[i].scoreValue;
                     zoneName = scoreZones[i].zoneName;
-                    Debug.Log($"Попадание в зону {zoneName} (радиус: {scoreZones[i].radius:F3}m)");
                     break;
                 }
             }
-
-            // 4. Визуальные эффекты
-            PlayHitEffects(hitPoint, zoneName);
 
             // 5. Вызываем событие
             onTakeDamage.Invoke();
@@ -199,47 +157,18 @@ namespace Valve.VR.InteractionSystem
             if (scoreManager != null)
             {
                 float accuracy = CalculateAccuracy(distance);
-                Debug.Log($"Добавляем очки: {score}, зона: {zoneName}, точность: {accuracy:F1}%");
                 scoreManager.AddScore(score, zoneName, accuracy);
             }
             else
             {
                 Debug.LogError("ScoreManager.Instance равен null!");
             }
-
-            Debug.Log($"Попадание в зону '{zoneName}'! Дистанция: {distance:F3}m -> +{score} очков");
         }
 
         float CalculateDistanceToCenter(Vector3 hitPoint)
         {
-            // if (is3DTarget)
-            // {
-            // Полное 3D расстояние (X, Y, Z)
             float distance3D = Vector3.Distance(hitPoint, targetCenter.position);
-            Debug.Log($"3D расстояние: {distance3D:F5}м (X:{hitPoint.x - targetCenter.position.x:F3}, Y:{hitPoint.y - targetCenter.position.y:F3}, Z:{hitPoint.z - targetCenter.position.z:F3})");
             return distance3D;
-
-            // else
-            // {
-            //     // Для плоской мишени - расстояние в 2D (X, Y)
-            //     // Игнорируем Z координату, так как мишень плоская
-            //     Vector2 center2D = new Vector2(targetCenter.position.x, targetCenter.position.y);
-            //     Vector2 hit2D = new Vector2(hitPoint.x, hitPoint.y);
-            //     float distance2D = Vector2.Distance(center2D, hit2D);
-
-            //     // Детальная отладка
-            //     Debug.Log($"2D расстояние: {distance2D:F5}м");
-            //     Debug.Log($"  Центр: ({center2D.x:F3}, {center2D.y:F3})");
-            //     Debug.Log($"  Точка: ({hit2D.x:F3}, {hit2D.y:F3})");
-            //     Debug.Log($"  Разница X: {Mathf.Abs(hit2D.x - center2D.x):F5}м");
-            //     Debug.Log($"  Разница Y: {Mathf.Abs(hit2D.y - center2D.y):F5}м");
-
-            //     // Также покажем 3D расстояние для сравнения
-            //     float distance3D = Vector3.Distance(hitPoint, targetCenter.position);
-            //     Debug.Log($"Для сравнения 3D расстояние: {distance3D:F5}м");
-
-            //     return distance2D;
-            // }
         }
 
         Vector3 GetRandomPointOnTarget()
@@ -259,44 +188,11 @@ namespace Valve.VR.InteractionSystem
 
         void OnMiss(Vector3 hitPoint, float distance)
         {
-            Debug.Log($"Промах! Дистанция {distance:F3}m превышает радиус мишени {targetRadius:F3}m");
 
             if (missSound != null)
             {
                 audioSource.clip = missSound;
                 audioSource.Play();
-            }
-
-            if (missParticle != null)
-            {
-                Instantiate(missParticle, hitPoint, Quaternion.identity);
-            }
-        }
-
-        void PlayHitEffects(Vector3 hitPoint, string zoneName)
-        {
-            if (hitSound != null)
-            {
-                audioSource.clip = hitSound;
-                audioSource.Play();
-            }
-
-            if (hitParticle != null)
-            {
-                ParticleSystem particle = Instantiate(hitParticle, hitPoint, Quaternion.identity);
-                ParticleSystem.MainModule main = particle.main;
-
-                // Цвет в зависимости от очков
-                if (zoneName.Contains("100")) main.startColor = Color.red;
-                else if (zoneName.Contains("80")) main.startColor = Color.yellow;
-                else if (zoneName.Contains("60")) main.startColor = Color.green;
-                else if (zoneName.Contains("40")) main.startColor = Color.blue;
-                else main.startColor = Color.white;
-            }
-
-            if (targetRenderer != null && hitMaterial != null)
-            {
-                StartCoroutine(HighlightTarget());
             }
         }
 
@@ -331,27 +227,16 @@ namespace Valve.VR.InteractionSystem
 
             // Рисуем общий радиус
             Gizmos.color = Color.white;
-            if (is3DTarget)
-            {
-                Gizmos.DrawWireSphere(center, targetRadius);
-            }
-            else
-            {
-                DrawWireCircle(center, targetRadius, 32);
-            }
+
+            Gizmos.DrawWireSphere(center, targetRadius);
+
 
             // Рисуем зоны
             foreach (var zone in scoreZones)
             {
                 Gizmos.color = zone.gizmoColor;
-                if (is3DTarget)
-                {
-                    Gizmos.DrawWireSphere(center, zone.radius);
-                }
-                else
-                {
-                    DrawWireCircle(center, zone.radius, 32);
-                }
+                Gizmos.DrawWireSphere(center, zone.radius);
+
             }
 
             // Центр
@@ -378,65 +263,5 @@ namespace Valve.VR.InteractionSystem
             }
         }
 
-        // Метод для получения информации о зоне
-        public string GetZoneInfo(Vector3 point)
-        {
-            float distance = CalculateDistanceToCenter(point);
-
-            string result = $"Расстояние: {distance:F5}м\n";
-            result += $"Радиус мишени: {targetRadius:F5}м\n";
-
-            if (distance > targetRadius)
-            {
-                return result + "Status: ВНЕ МИШЕНИ";
-            }
-
-            result += "Зоны (радиус -> очки):\n";
-            for (int i = 0; i < scoreZones.Length; i++)
-            {
-                bool isInZone = distance <= scoreZones[i].radius;
-                string marker = isInZone ? "🎯" : "  ";
-                result += $"{marker} {scoreZones[i].zoneName}: {scoreZones[i].radius:F5}м -> {scoreZones[i].scoreValue} очков\n";
-            }
-
-            // Определяем конкретную зону
-            foreach (var zone in scoreZones)
-            {
-                if (distance <= zone.radius)
-                {
-                    return result + $"Попадание в: {zone.zoneName} (+{zone.scoreValue})";
-                }
-            }
-
-            return result + "Status: В мишени, но не в зоне";
-        }
-
-        // Отладочная информация
-        public string GetDebugInfo(Vector3 hitPoint)
-        {
-            float distance = CalculateDistanceToCenter(hitPoint);
-            Vector3 diff = hitPoint - targetCenter.position;
-
-            string info = "=== Отладка мишени ===\n";
-            info += $"Точка попадания: {hitPoint}\n";
-            info += $"Центр мишени: {targetCenter.position}\n";
-            info += $"Разница: X={diff.x:F3}, Y={diff.y:F3}, Z={diff.z:F3}\n";
-            info += $"Расстояние: {distance:F3}m\n";
-            info += $"Радиус мишени: {targetRadius:F3}m\n";
-            info += $"Количество зон: {scoreZones?.Length ?? 0}\n";
-
-            if (scoreZones != null)
-            {
-                info += "Зоны (радиус -> очки):\n";
-                foreach (var zone in scoreZones)
-                {
-                    info += $"  {zone.zoneName}: {zone.radius:F3}m -> {zone.scoreValue} очков\n";
-                }
-            }
-
-            info += $"Попадание в: {GetZoneInfo(hitPoint)}";
-
-            return info;
-        }
     }
 }
