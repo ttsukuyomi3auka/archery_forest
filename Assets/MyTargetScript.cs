@@ -26,10 +26,6 @@ namespace Valve.VR.InteractionSystem
         public AudioClip hitSound;
 
         private AudioSource audioSource;
-        private Renderer targetRenderer;
-        private Material originalMaterial;
-        public Material hitMaterial;
-        public float highlightDuration = 0.1f;
 
         void Awake()
         {
@@ -55,13 +51,6 @@ namespace Valve.VR.InteractionSystem
             audioSource = gameObject.AddComponent<AudioSource>();
             audioSource.spatialBlend = 1.0f;
             audioSource.playOnAwake = false;
-
-            // Визуал
-            targetRenderer = GetComponent<Renderer>();
-            if (targetRenderer != null)
-            {
-                originalMaterial = targetRenderer.material;
-            }
 
             // Автоматически определяем радиус если не задан или меньше максимального
             UpdateTargetRadius();
@@ -138,7 +127,7 @@ namespace Valve.VR.InteractionSystem
                     break;
                 }
             }
-            PlayHitEffects(hitPoint, zoneName);
+            PlayHitEffects();
 
             // Вызываем событие
             onTakeDamage.Invoke();
@@ -156,7 +145,7 @@ namespace Valve.VR.InteractionSystem
             }
         }
 
-        void PlayHitEffects(Vector3 hitPoint, string zoneName)
+        void PlayHitEffects()
         {
             if (hitSound != null)
             {
@@ -169,16 +158,6 @@ namespace Valve.VR.InteractionSystem
         {
             float distance3D = Vector3.Distance(hitPoint, targetCenter.position);
             return distance3D;
-        }
-
-        System.Collections.IEnumerator HighlightTarget()
-        {
-            if (targetRenderer != null && hitMaterial != null)
-            {
-                targetRenderer.material = hitMaterial;
-                yield return new WaitForSeconds(highlightDuration);
-                targetRenderer.material = originalMaterial;
-            }
         }
 
         float CalculateAccuracy(float distance)
@@ -216,25 +195,6 @@ namespace Valve.VR.InteractionSystem
             // Центр
             Gizmos.color = Color.red;
             Gizmos.DrawSphere(center, 0.01f);
-        }
-
-        void DrawWireCircle(Vector3 center, float radius, int segments)
-        {
-            float angleStep = 360f / segments;
-            Vector3 prevPoint = center + new Vector3(radius, 0, 0);
-
-            for (int i = 1; i <= segments; i++)
-            {
-                float angle = i * angleStep * Mathf.Deg2Rad;
-                Vector3 nextPoint = center + new Vector3(
-                    Mathf.Cos(angle) * radius,
-                    Mathf.Sin(angle) * radius,
-                    0
-                );
-
-                Gizmos.DrawLine(prevPoint, nextPoint);
-                prevPoint = nextPoint;
-            }
         }
 
     }

@@ -24,9 +24,7 @@ namespace Valve.VR.InteractionSystem
         [Header("Statistics")]
         public int currentScore = 0;
         public int totalHits = 0;
-        public int totalMisses = 0;
         public float averageAccuracy = 0f;
-        public int bestHit = 0;
 
         private List<HitData> hitHistory = new List<HitData>();
 
@@ -103,13 +101,10 @@ namespace Valve.VR.InteractionSystem
         {
             // Средняя точность
             float totalAccuracy = 0f;
-            bestHit = 0;
 
             foreach (var hit in hitHistory)
             {
                 totalAccuracy += hit.accuracy;
-                if (hit.points > bestHit)
-                    bestHit = hit.points;
             }
 
             averageAccuracy = hitHistory.Count > 0 ? totalAccuracy / hitHistory.Count : 0f;
@@ -167,9 +162,7 @@ namespace Valve.VR.InteractionSystem
         {
             currentScore = 0;
             totalHits = 0;
-            totalMisses = 0;
             averageAccuracy = 0f;
-            bestHit = 0;
             hitHistory.Clear();
 
             UpdateAllDisplays();
@@ -178,18 +171,14 @@ namespace Valve.VR.InteractionSystem
         // Геттеры для статистики
         public int GetCurrentScore() => currentScore;
         public float GetAverageAccuracy() => averageAccuracy;
-        public int GetBestHit() => bestHit;
         public int GetTotalHits() => totalHits;
-        public int GetTotalMisses() => totalMisses;
 
         // Полная статистика
         public string GetFullStats()
         {
             return $"Score: {currentScore}\n" +
                    $"Hits: {totalHits}\n" +
-                   $"Misses: {totalMisses}\n" +
-                   $"Accuracy: {averageAccuracy:F1}%\n" +
-                   $"Best Hit: {bestHit}";
+                   $"Accuracy: {averageAccuracy:F1}%";
         }
     }
 }
