@@ -39,34 +39,32 @@ namespace Valve.VR.InteractionSystem
 
 		private float initialMass;
 		private float initialDrag;
-        private float initialAngularDrag;
-        private RigidbodyInterpolation initialInterpolation;
-        private CollisionDetectionMode initialCollisionDetection;
-        private bool initialUseGravity;
+		private float initialAngularDrag;
+		private RigidbodyInterpolation initialInterpolation;
+		private CollisionDetectionMode initialCollisionDetection;
+		private bool initialUseGravity;
 
-
-        private void Awake()
-        {
-            initialMass = shaftRB.mass;
-            initialDrag = shaftRB.drag;
-            initialAngularDrag = shaftRB.angularDrag;
-            initialInterpolation = shaftRB.interpolation;
-            initialCollisionDetection = shaftRB.collisionDetectionMode;
-            initialUseGravity = shaftRB.useGravity;
-            Destroy(this.GetComponent<Rigidbody>());
-        }
-
-        //-------------------------------------------------
-        void Start()
-        {
-            Physics.IgnoreCollision(this.GetComponent<Collider>(), Player.instance.headCollider);
+		private void Awake()
+		{
+			initialMass = shaftRB.mass;
+			initialDrag = shaftRB.drag;
+			initialAngularDrag = shaftRB.angularDrag;
+			initialInterpolation = shaftRB.interpolation;
+			initialCollisionDetection = shaftRB.collisionDetectionMode;
+			initialUseGravity = shaftRB.useGravity;
+			Destroy(this.GetComponent<Rigidbody>());
 		}
 
+		//-------------------------------------------------
+		void Start()
+		{
+			Physics.IgnoreCollision(this.GetComponent<Collider>(), Player.instance.headCollider);
+		}
 
 		//-------------------------------------------------
 		void FixedUpdate()
 		{
-			if ( released && inFlight )
+			if (released && inFlight)
 			{
 				prevPosition = transform.position;
 				prevRotation = transform.rotation;
@@ -76,50 +74,48 @@ namespace Valve.VR.InteractionSystem
 			}
 		}
 
-
 		public void StartRelease()
-        {
-            Rigidbody rb = this.gameObject.AddComponent<Rigidbody>();
-            rb.isKinematic = true;
-            if (shaftRB == null)
-                shaftRB = rb;
+		{
+			Rigidbody rb = this.gameObject.AddComponent<Rigidbody>();
+			rb.isKinematic = true;
+			if (shaftRB == null)
+				shaftRB = rb;
 
-            shaftRB.mass = initialMass;
-            shaftRB.drag = initialDrag;
-            shaftRB.angularDrag = initialAngularDrag;
+			shaftRB.mass = initialMass;
+			shaftRB.drag = initialDrag;
+			shaftRB.angularDrag = initialAngularDrag;
 			shaftRB.interpolation = initialInterpolation;
 			shaftRB.collisionDetectionMode = initialCollisionDetection;
-            shaftRB.useGravity = initialUseGravity;
+			shaftRB.useGravity = initialUseGravity;
 
 			arrowHeadRB.GetComponent<FixedJoint>().connectedBody = rb;
-        }
-
+		}
 
 		//-------------------------------------------------
-		public void ArrowReleased( float inputVelocity )
-        {
-            inFlight = true;
+		public void ArrowReleased(float inputVelocity)
+		{
+			inFlight = true;
 			released = true;
 
 			airReleaseSound.Play();
 
-			if ( glintParticle != null )
+			if (glintParticle != null)
 			{
 				glintParticle.Play();
 			}
 
-			if ( gameObject.GetComponentInChildren<FireSource>().isBurning )
+			if (gameObject.GetComponentInChildren<FireSource>().isBurning)
 			{
 				fireReleaseSound.Play();
 			}
 
 			// Check if arrow is shot inside or too close to an object
-			RaycastHit[] hits = Physics.SphereCastAll( transform.position, 0.01f, transform.forward, 0.80f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore );
-			foreach ( RaycastHit hit in hits )
+			RaycastHit[] hits = Physics.SphereCastAll(transform.position, 0.01f, transform.forward, 0.80f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+			foreach (RaycastHit hit in hits)
 			{
-				if ( hit.collider.gameObject != gameObject && hit.collider.gameObject != arrowHeadRB.gameObject && hit.collider != Player.instance.headCollider )
+				if (hit.collider.gameObject != gameObject && hit.collider.gameObject != arrowHeadRB.gameObject && hit.collider != Player.instance.headCollider)
 				{
-					Destroy( gameObject );
+					Destroy(gameObject);
 					return;
 				}
 			}
@@ -130,39 +126,38 @@ namespace Valve.VR.InteractionSystem
 			prevHeadPosition = arrowHeadRB.transform.position;
 			prevVelocity = GetComponent<Rigidbody>().velocity;
 
-            SetCollisionMode(CollisionDetectionMode.ContinuousDynamic);
+			SetCollisionMode(CollisionDetectionMode.ContinuousDynamic);
 
-			Destroy( gameObject, 30 );
+			Destroy(gameObject, 30);
 		}
 
-        protected void SetCollisionMode(CollisionDetectionMode newMode, bool force = false)
-        {
-            Rigidbody[] rigidBodies = this.GetComponentsInChildren<Rigidbody>();
-            for (int rigidBodyIndex = 0; rigidBodyIndex < rigidBodies.Length; rigidBodyIndex++)
-            {
-                if (rigidBodies[rigidBodyIndex].isKinematic == false || force)
-                    rigidBodies[rigidBodyIndex].collisionDetectionMode = newMode;
-            }
-        }
-
+		protected void SetCollisionMode(CollisionDetectionMode newMode, bool force = false)
+		{
+			Rigidbody[] rigidBodies = this.GetComponentsInChildren<Rigidbody>();
+			for (int rigidBodyIndex = 0; rigidBodyIndex < rigidBodies.Length; rigidBodyIndex++)
+			{
+				if (rigidBodies[rigidBodyIndex].isKinematic == false || force)
+					rigidBodies[rigidBodyIndex].collisionDetectionMode = newMode;
+			}
+		}
 
 		//-------------------------------------------------
-		void OnCollisionEnter( Collision collision )
+		void OnCollisionEnter(Collision collision)
 		{
-			if ( inFlight )
+			if (inFlight)
 			{
 				Rigidbody rb = GetComponent<Rigidbody>();
 				float rbSpeed = rb.velocity.sqrMagnitude;
-				bool canStick = ( targetPhysMaterial != null && collision.collider.sharedMaterial == targetPhysMaterial && rbSpeed > 0.2f );
+				bool canStick = (targetPhysMaterial != null && collision.collider.sharedMaterial == targetPhysMaterial && rbSpeed > 0.2f);
 				bool hitBalloon = collision.collider.gameObject.GetComponent<Balloon>() != null;
 
-				if ( travelledFrames < 2 && !canStick )
+				if (travelledFrames < 2 && !canStick)
 				{
 					// Reset transform but halve your velocity
 					transform.position = prevPosition - prevVelocity * Time.deltaTime;
 					transform.rotation = prevRotation;
 
-					Vector3 reflfectDir = Vector3.Reflect( arrowHeadRB.velocity, collision.contacts[0].normal );
+					Vector3 reflfectDir = Vector3.Reflect(arrowHeadRB.velocity, collision.contacts[0].normal);
 					arrowHeadRB.velocity = reflfectDir * 0.25f;
 					shaftRB.velocity = reflfectDir * 0.25f;
 
@@ -170,13 +165,13 @@ namespace Valve.VR.InteractionSystem
 					return;
 				}
 
-				if ( glintParticle != null )
+				if (glintParticle != null)
 				{
-					glintParticle.Stop( true );
+					glintParticle.Stop(true);
 				}
 
 				// Only play hit sounds if we're moving quickly
-				if ( rbSpeed > 0.1f )
+				if (rbSpeed > 0.1f)
 				{
 					hitGroundSound.Play();
 				}
@@ -184,11 +179,11 @@ namespace Valve.VR.InteractionSystem
 				FireSource arrowFire = gameObject.GetComponentInChildren<FireSource>();
 				FireSource fireSourceOnTarget = collision.collider.GetComponentInParent<FireSource>();
 
-				if ( arrowFire != null && arrowFire.isBurning && ( fireSourceOnTarget != null ) )
+				if (arrowFire != null && arrowFire.isBurning && (fireSourceOnTarget != null))
 				{
-					if ( !hasSpreadFire )
+					if (!hasSpreadFire)
 					{
-						collision.collider.gameObject.SendMessageUpwards( "FireExposure", gameObject, SendMessageOptions.DontRequireReceiver );
+						collision.collider.gameObject.SendMessageUpwards("FireExposure", gameObject, SendMessageOptions.DontRequireReceiver);
 						hasSpreadFire = true;
 					}
 				}
@@ -196,72 +191,71 @@ namespace Valve.VR.InteractionSystem
 				{
 					// Only count collisions with good speed so that arrows on the ground can't deal damage
 					// always pop balloons
-					if ( rbSpeed > 0.1f || hitBalloon )
+					if (rbSpeed > 0.1f || hitBalloon)
 					{
-						collision.collider.gameObject.SendMessageUpwards( "ApplyDamage", SendMessageOptions.DontRequireReceiver );
-						gameObject.SendMessage( "HasAppliedDamage", SendMessageOptions.DontRequireReceiver );
+						collision.collider.gameObject.SendMessageUpwards("ApplyDamage", collision.contacts[0].point, SendMessageOptions.DontRequireReceiver);
+						gameObject.SendMessage("HasAppliedDamage", SendMessageOptions.DontRequireReceiver);
 					}
 				}
 
-				if ( hitBalloon )
+				if (hitBalloon)
 				{
 					// Revert my physics properties cause I don't want balloons to influence my travel
 					transform.position = prevPosition;
 					transform.rotation = prevRotation;
 					arrowHeadRB.velocity = prevVelocity;
-					Physics.IgnoreCollision( arrowHeadRB.GetComponent<Collider>(), collision.collider );
-					Physics.IgnoreCollision( shaftRB.GetComponent<Collider>(), collision.collider );
+					Physics.IgnoreCollision(arrowHeadRB.GetComponent<Collider>(), collision.collider);
+					Physics.IgnoreCollision(shaftRB.GetComponent<Collider>(), collision.collider);
 				}
 
-				if ( canStick )
+				if (canStick)
 				{
-					StickInTarget( collision, travelledFrames < 2 );
+					StickInTarget(collision, travelledFrames < 2);
 				}
 
 				// Player Collision Check (self hit)
-				if ( Player.instance && collision.collider == Player.instance.headCollider )
+				if (Player.instance && collision.collider == Player.instance.headCollider)
 				{
 					Player.instance.PlayerShotSelf();
 				}
 			}
 		}
 
-
 		//-------------------------------------------------
-		private void StickInTarget( Collision collision, bool bSkipRayCast )
+		private void StickInTarget(Collision collision, bool bSkipRayCast)
 		{
 			Vector3 prevForward = prevRotation * Vector3.forward;
 
 			// Only stick in target if the collider is front of the arrow head
-			if ( !bSkipRayCast )
+			if (!bSkipRayCast)
 			{
 				RaycastHit[] hitInfo;
-				hitInfo = Physics.RaycastAll( prevHeadPosition - prevVelocity * Time.deltaTime, prevForward, prevVelocity.magnitude * Time.deltaTime * 2.0f );
+				hitInfo = Physics.RaycastAll(prevHeadPosition - prevVelocity * Time.deltaTime, prevForward, prevVelocity.magnitude * Time.deltaTime * 2.0f);
 				bool properHit = false;
-				for ( int i = 0; i < hitInfo.Length; ++i )
+				for (int i = 0; i < hitInfo.Length; ++i)
 				{
 					RaycastHit hit = hitInfo[i];
 
-					if ( hit.collider == collision.collider )
+					if (hit.collider == collision.collider)
 					{
 						properHit = true;
 						break;
 					}
 				}
 
-				if ( !properHit )
+				if (!properHit)
 				{
 					return;
 				}
 			}
 
-			Destroy( glintParticle );
+			Destroy(glintParticle);
 
 			inFlight = false;
 
-            SetCollisionMode(CollisionDetectionMode.Discrete, true);
+			SetCollisionMode(CollisionDetectionMode.Discrete, true);
 
-            shaftRB.velocity = Vector3.zero;
+			shaftRB.velocity = Vector3.zero;
 			shaftRB.angularVelocity = Vector3.zero;
 			shaftRB.isKinematic = true;
 			shaftRB.useGravity = false;
@@ -275,17 +269,16 @@ namespace Valve.VR.InteractionSystem
 
 			hitTargetSound.Play();
 
-
 			// If the hit item has a parent, dock an empty object to that
 			// this fixes an issue with scaling hierarchy. I suspect this is not sustainable for a large object / scaling hierarchy.
-			scaleParentObject = new GameObject( "Arrow Scale Parent" );
+			scaleParentObject = new GameObject("Arrow Scale Parent");
 			Transform parentTransform = collision.collider.transform;
 
 			// Don't do this for weebles because of how it has a fixed joint
 			ExplosionWobble wobble = collision.collider.gameObject.GetComponent<ExplosionWobble>();
-			if ( !wobble )
+			if (!wobble)
 			{
-				if ( parentTransform.parent )
+				if (parentTransform.parent)
 				{
 					parentTransform = parentTransform.parent;
 				}
@@ -297,16 +290,15 @@ namespace Valve.VR.InteractionSystem
 			transform.parent = scaleParentObject.transform;
 			transform.rotation = prevRotation;
 			transform.position = prevPosition;
-			transform.position = collision.contacts[0].point - transform.forward * ( 0.75f - ( Util.RemapNumberClamped( prevVelocity.magnitude, 0f, 10f, 0.0f, 0.1f ) + Random.Range( 0.0f, 0.05f ) ) );
+			transform.position = collision.contacts[0].point - transform.forward * (0.75f - (Util.RemapNumberClamped(prevVelocity.magnitude, 0f, 10f, 0.0f, 0.1f) + Random.Range(0.0f, 0.05f)));
 		}
-
 
 		//-------------------------------------------------
 		void OnDestroy()
 		{
-			if ( scaleParentObject != null )
+			if (scaleParentObject != null)
 			{
-				Destroy( scaleParentObject );
+				Destroy(scaleParentObject);
 			}
 		}
 	}

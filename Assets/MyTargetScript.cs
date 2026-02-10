@@ -31,7 +31,6 @@ namespace Valve.VR.InteractionSystem
         public Material hitMaterial;
         public float highlightDuration = 0.1f;
 
-
         void Awake()
         {
             // Инициализируем зоны если массив пустой или null
@@ -46,6 +45,12 @@ namespace Valve.VR.InteractionSystem
 
         void Start()
         {
+            // Сортируем зоны по радиусу (от меньшего к большему) чтобы логика проверки работала корректно
+            if (scoreZones != null)
+            {
+                System.Array.Sort(scoreZones, (a, b) => a.radius.CompareTo(b.radius));
+            }
+
             // Аудио
             audioSource = gameObject.AddComponent<AudioSource>();
             audioSource.spatialBlend = 1.0f;
@@ -107,16 +112,9 @@ namespace Valve.VR.InteractionSystem
             targetCenter = centerObj.transform;
         }
 
-        // Этот метод вызывается стрелой при попадании
-        private void ApplyDamage()
-        {
-            // Для теста
-            Vector3 approximateHitPoint = GetRandomPointOnTarget();
-            OnHit(approximateHitPoint);
-        }
-
-        // С передачей точки
-        public void ApplyDamageAtPoint(Vector3 hitPoint)
+        // Этот метод вызывается стрелой при попадании.
+        // Теперь он требует передачи точки попадания.
+        public void ApplyDamage(Vector3 hitPoint)
         {
             OnHit(hitPoint);
         }
@@ -173,21 +171,6 @@ namespace Valve.VR.InteractionSystem
             return distance3D;
         }
 
-        Vector3 GetRandomPointOnTarget()
-        {
-            // Случайная точка в пределах мишени
-            float randomAngle = Random.Range(0f, Mathf.PI * 2f);
-            float randomRadius = Random.Range(0f, targetRadius);
-
-            Vector3 localPoint = new Vector3(
-                Mathf.Cos(randomAngle) * randomRadius,
-                Mathf.Sin(randomAngle) * randomRadius,
-                0
-            );
-
-            return transform.TransformPoint(localPoint);
-        }
-
         System.Collections.IEnumerator HighlightTarget()
         {
             if (targetRenderer != null && hitMaterial != null)
@@ -221,7 +204,6 @@ namespace Valve.VR.InteractionSystem
             Gizmos.color = Color.white;
 
             Gizmos.DrawWireSphere(center, targetRadius);
-
 
             // Рисуем зоны
             foreach (var zone in scoreZones)
