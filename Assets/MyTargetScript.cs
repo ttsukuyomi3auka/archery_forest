@@ -24,7 +24,6 @@ namespace Valve.VR.InteractionSystem
 
         [Header("Sound")]
         public AudioClip hitSound;
-        public AudioClip missSound;
 
         private AudioSource audioSource;
         private Renderer targetRenderer;
@@ -69,15 +68,15 @@ namespace Valve.VR.InteractionSystem
             {
                 scoreZones = new ScoreZone[]
                 {
-                    new ScoreZone { zoneName = "100", radius = 0.04f, scoreValue = 100, gizmoColor = Color.red },
-                    new ScoreZone { zoneName = "80", radius = 0.08f, scoreValue = 80, gizmoColor = Color.yellow },
-                    new ScoreZone { zoneName = "60", radius = 0.12f, scoreValue = 60, gizmoColor = Color.green },
-                    new ScoreZone { zoneName = "50", radius = 0.16f, scoreValue = 50, gizmoColor = Color.green },
-                    new ScoreZone { zoneName = "40", radius = 0.20f, scoreValue = 40, gizmoColor = Color.green },
-                    new ScoreZone { zoneName = "30", radius = 0.24f, scoreValue = 30, gizmoColor = Color.green },
-                    new ScoreZone { zoneName = "20", radius = 0.28f, scoreValue = 20, gizmoColor = Color.green },
-                    new ScoreZone { zoneName = "10", radius = 0.30f, scoreValue = 10, gizmoColor = Color.green },
-                    new ScoreZone { zoneName = "Outer Ring", radius = 0.31f, scoreValue = 0, gizmoColor = Color.blue }
+                    new ScoreZone { zoneName = "100", radius = 0.04f, scoreValue = 100 },
+                    new ScoreZone { zoneName = "80", radius = 0.08f, scoreValue = 80},
+                    new ScoreZone { zoneName = "60", radius = 0.12f, scoreValue = 60},
+                    new ScoreZone { zoneName = "50", radius = 0.16f, scoreValue = 50 },
+                    new ScoreZone { zoneName = "40", radius = 0.20f, scoreValue = 40},
+                    new ScoreZone { zoneName = "30", radius = 0.24f, scoreValue = 30},
+                    new ScoreZone { zoneName = "20", radius = 0.28f, scoreValue = 20},
+                    new ScoreZone { zoneName = "10", radius = 0.30f, scoreValue = 10},
+                    new ScoreZone { zoneName = "Outer Ring", radius = 0.31f, scoreValue = 0}
                 };
             }
         }
@@ -124,17 +123,10 @@ namespace Valve.VR.InteractionSystem
 
         void OnHit(Vector3 hitPoint)
         {
-            // 1. Рассчитываем расстояние до центра
+            // Рассчитываем расстояние до центра
             float distance = CalculateDistanceToCenter(hitPoint);
 
-            // 2. Если попадание за пределами круга - это промах
-            if (distance > targetRadius)
-            {
-                OnMiss(hitPoint, distance);
-                return;
-            }
-
-            // 3. Определяем зону попадания
+            // Определяем зону попадания
             int score = 0;
             string zoneName = "Miss";
 
@@ -148,11 +140,12 @@ namespace Valve.VR.InteractionSystem
                     break;
                 }
             }
+            PlayHitEffects(hitPoint, zoneName);
 
-            // 5. Вызываем событие
+            // Вызываем событие
             onTakeDamage.Invoke();
 
-            // 6. Добавляем очки
+            // Добавляем очки
             ScoreManager scoreManager = ScoreManager.Instance;
             if (scoreManager != null)
             {
@@ -162,6 +155,15 @@ namespace Valve.VR.InteractionSystem
             else
             {
                 Debug.LogError("ScoreManager.Instance равен null!");
+            }
+        }
+
+        void PlayHitEffects(Vector3 hitPoint, string zoneName)
+        {
+            if (hitSound != null)
+            {
+                audioSource.clip = hitSound;
+                audioSource.Play();
             }
         }
 
@@ -184,16 +186,6 @@ namespace Valve.VR.InteractionSystem
             );
 
             return transform.TransformPoint(localPoint);
-        }
-
-        void OnMiss(Vector3 hitPoint, float distance)
-        {
-
-            if (missSound != null)
-            {
-                audioSource.clip = missSound;
-                audioSource.Play();
-            }
         }
 
         System.Collections.IEnumerator HighlightTarget()
