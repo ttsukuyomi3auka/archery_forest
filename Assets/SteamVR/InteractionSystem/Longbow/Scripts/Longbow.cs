@@ -37,10 +37,10 @@ namespace Valve.VR.InteractionSystem
 		public bool nocked;
 		public bool pulled;
 
-		private const float minPull = 0.05f;
-		private const float maxPull = 0.5f;
+		private const float minPull = 0.1f; // Было 0.05f
+		private const float maxPull = 0.6f; // Было 0.5f
 		private float nockDistanceTravelled = 0f;
-		private float hapticDistanceThreshold = 0.01f;
+		private float hapticDistanceThreshold = 0.02f; // Было 0.01f
 		private float lastTickDistance;
 		private const float bowPullPulseStrengthLow = 100;
 		private const float bowPullPulseStrengthHigh = 500;
@@ -56,14 +56,15 @@ namespace Valve.VR.InteractionSystem
 
 		private bool lerpBackToZeroRotation;
 		private float lerpStartTime;
-		private float lerpDuration = 0.15f;
+		private float lerpDuration = 0.3f; // Было 0.15f
 		private Quaternion lerpStartRotation;
 
 		private float nockLerpStartTime;
 
 		private Quaternion nockLerpStartRotation;
 
-		public float drawOffset = 0.06f;
+		public float drawOffset = 0.04f; // Было 0.06f
+
 
 		public LinearMapping bowDrawLinearMapping;
 
