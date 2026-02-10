@@ -1,153 +1,195 @@
 using UnityEngine;
+using TMPro;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Valve.VR.InteractionSystem
 {
     public class ScoreManager : MonoBehaviour
     {
-        public static ScoreManager Instance { get; private set; }
+        [System.Serializable]
+        public class HitData
+        {
+            public int points;
+            public string zone;
+            public float accuracy;
+            public Vector3 position;
+        }
 
         [Header("Display Settings")]
-        public Vector3 offsetFromPlayer = new Vector3(0, 0.3f, 1.5f);
-
-        private TextMesh scoreText;
-        private int score = 0;
-        private Transform playerHead;
-
+        public TextMeshProUGUI scoreText;
+        public TextMeshProUGUI accuracyText;
+        public TextMeshProUGUI zoneText;
+        
+        [Header("Statistics")]
+        public int currentScore = 0;
+        public int totalHits = 0;
+        public int totalMisses = 0;
+        public float averageAccuracy = 0f;
+        public int bestHit = 0;
+        
+        private List<HitData> hitHistory = new List<HitData>();
+        
+        private static ScoreManager _instance;
+        public static ScoreManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = FindObjectOfType<ScoreManager>();
+                }
+                return _instance;
+            }
+        }
+        
         void Awake()
         {
-            if (Instance != null && Instance != this)
+            if (_instance != null && _instance != this)
             {
                 Destroy(gameObject);
                 return;
             }
-            Instance = this;
-
-            SetupText();
-            FindPlayerHead();
+            _instance = this;
+            
+            // Инициализация UI
+            InitializeUI();
         }
-
-        public int GetCurrentScore()
+        
+        void InitializeUI()
         {
-            return score;
-        }
-
-        public void ResetScore()
-        {
-            scoreText.text = "Score: 0";
-            score = 0;
-        }
-
-        void SetupText()
-        {
-            GameObject textObj = new GameObject("ScoreDisplay");
-            scoreText = textObj.AddComponent<TextMesh>();
-
-            scoreText.text = "Score: 0";
-            scoreText.fontSize = 80;
-            scoreText.characterSize = 0.01f;
-            scoreText.anchor = TextAnchor.MiddleCenter;
-            scoreText.alignment = TextAlignment.Center;
-            scoreText.color = Color.green;
-
-            // Обводка через несколько текстов (простой способ)
-            CreateTextOutline(textObj);
-
-            textObj.AddComponent<FacePlayer>();
-        }
-
-        void CreateTextOutline(GameObject parent)
-        {
-            // Создаем 4 копии текста для обводки
-            for (int i = 0; i < 4; i++)
+            // Если тексты не назначены, пытаемся найти
+            if (scoreText == null)
             {
-                GameObject outlineObj = new GameObject($"Outline_{i}");
-                outlineObj.transform.SetParent(parent.transform);
-                outlineObj.transform.localPosition = GetOffset(i);
-
-                TextMesh outline = outlineObj.AddComponent<TextMesh>();
-                outline.text = "Score: 0";
-                outline.fontSize = 80;
-                outline.characterSize = 0.01f;
-                outline.anchor = TextAnchor.MiddleCenter;
-                outline.color = Color.black;
+                GameObject scoreObj = GameObject.Find("ScoreText");
+                if (scoreObj != null) scoreText = scoreObj.GetComponent<TextMeshProUGUI>();
             }
+            
+            UpdateAllDisplays();
         }
-
-        Vector3 GetOffset(int index)
+        
+        // Основной метод добавления очков
+        public void AddScore(int points, string zone = "Target", float accuracy = 100f, Vector3 hitPosition = default)
         {
-            switch (index)
+            currentScore += points;
+            totalHits++;
+            
+            // Сохраняем данные
+            HitData hit = new HitData
             {
-                case 0: return new Vector3(0.002f, 0, 0);
-                case 1: return new Vector3(-0.002f, 0, 0);
-                case 2: return new Vector3(0, 0.002f, 0);
-                case 3: return new Vector3(0, -0.002f, 0);
-                default: return Vector3.zero;
-            }
-        }
-
-        void FindPlayerHead()
-        {
-            if (Player.instance != null)
+                points = points,
+                zone = zone,
+                accuracy = accuracy,
+                position = hitPosition
+            };
+            hitHistory.Add(hit);
+            
+            // Обновляем статистику
+            UpdateStatistics();
+            
+            // Обновляем UI
+            UpdateAllDisplays();
+            
+            // Эффект
+            if (points > 0)
             {
-                playerHead = Player.instance.hmdTransform;
+                StartCoroutine(ScoreEffect(points, zone));
             }
+            
+            Debug.Log($"Добавлено {points} очков. Зона: {zone}, Точность: {accuracy:F1}%");
         }
-
-        void Update()
+        
+        void UpdateStatistics()
         {
-            // Обновляем позицию относительно игрока
-            if (playerHead != null && scoreText != null)
+            // Средняя точность
+            float totalAccuracy = 0f;
+            bestHit = 0;
+            
+            foreach (var hit in hitHistory)
             {
-                scoreText.transform.position = playerHead.position +
-                    playerHead.forward * offsetFromPlayer.z +
-                    playerHead.up * offsetFromPlayer.y +
-                    playerHead.right * offsetFromPlayer.x;
+                totalAccuracy += hit.accuracy;
+                if (hit.points > bestHit)
+                    bestHit = hit.points;
             }
+            
+            averageAccuracy = hitHistory.Count > 0 ? totalAccuracy / hitHistory.Count : 0f;
         }
-
-        public void AddScore(int points)
-        {
-            score += points;
-            UpdateDisplay();
-        }
-
-        void UpdateDisplay()
+        
+        void UpdateAllDisplays()
         {
             if (scoreText != null)
+                scoreText.text = $"Score: {currentScore}";
+            
+            if (accuracyText != null)
+                accuracyText.text = $"Accuracy: {averageAccuracy:F1}%";
+            
+            if (zoneText != null && hitHistory.Count > 0)
             {
-                scoreText.text = $"Score: {score}";
-
-                // Обновляем все обводки
-                foreach (Transform child in scoreText.transform)
-                {
-                    TextMesh childText = child.GetComponent<TextMesh>();
-                    if (childText != null)
-                    {
-                        childText.text = $"Score: {score}";
-                    }
-                }
+                HitData lastHit = hitHistory[hitHistory.Count - 1];
+                zoneText.text = $"Zone: {lastHit.zone}";
             }
         }
-    }
-
-    public class FacePlayer : MonoBehaviour
-    {
-        private Transform playerHead;
-
-        void Start()
+        
+        IEnumerator ScoreEffect(int points, string zone)
         {
-            if (Player.instance != null)
-            {
-                playerHead = Player.instance.hmdTransform;
-            }
+            if (scoreText == null) yield break;
+            
+            Color originalColor = scoreText.color;
+            Vector3 originalScale = scoreText.transform.localScale;
+            
+            // Цвет в зависимости от зоны
+            Color zoneColor = GetZoneColor(zone);
+            scoreText.color = zoneColor;
+            scoreText.transform.localScale = originalScale * 1.3f;
+            
+            // Временно показываем полученные очки
+            string originalText = scoreText.text;
+            scoreText.text = $"+{points}!\n{originalText}";
+            
+            yield return new WaitForSeconds(0.3f);
+            
+            // Возвращаем
+            scoreText.color = originalColor;
+            scoreText.transform.localScale = originalScale;
+            scoreText.text = originalText;
         }
-
-        void LateUpdate()
+        
+        Color GetZoneColor(string zone)
         {
-            if (playerHead != null)
-            {
-                transform.LookAt(2 * transform.position - playerHead.position);
-            }
+            if (zone.Contains("Bullseye")) return Color.red;
+            if (zone.Contains("Inner")) return Color.yellow;
+            if (zone.Contains("Middle")) return Color.green;
+            if (zone.Contains("Outer")) return Color.blue;
+            return Color.white;
+        }
+        
+        public void ResetScore()
+        {
+            currentScore = 0;
+            totalHits = 0;
+            totalMisses = 0;
+            averageAccuracy = 0f;
+            bestHit = 0;
+            hitHistory.Clear();
+            
+            UpdateAllDisplays();
+        }
+        
+        // Геттеры для статистики
+        public int GetCurrentScore() => currentScore;
+        public float GetAverageAccuracy() => averageAccuracy;
+        public int GetBestHit() => bestHit;
+        public int GetTotalHits() => totalHits;
+        public int GetTotalMisses() => totalMisses;
+        
+        // Полная статистика
+        public string GetFullStats()
+        {
+            return $"Score: {currentScore}\n" +
+                   $"Hits: {totalHits}\n" +
+                   $"Misses: {totalMisses}\n" +
+                   $"Accuracy: {averageAccuracy:F1}%\n" +
+                   $"Best Hit: {bestHit}";
         }
     }
 }
