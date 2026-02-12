@@ -22,7 +22,7 @@ namespace Valve.VR.InteractionSystem
             if (Input.GetKeyDown(resetScoreKey) && ScoreManager.Instance != null)
             {
                 ScoreManager.Instance.ResetScore();
-                Debug.Log("Счет сброшен!");
+                Debug.Log("Счёт сброшен!");
             }
         }
 
@@ -42,39 +42,34 @@ namespace Valve.VR.InteractionSystem
             if (Physics.Raycast(ray, out hit, raycastDistance))
             {
                 MyTargetScript target = hit.collider.GetComponent<MyTargetScript>();
+                if (target == null)
+                    target = hit.collider.GetComponentInParent<MyTargetScript>();
+
                 if (target != null)
                 {
-
-                    target.SendMessage("ApplyDamageAtPoint", hit.point, SendMessageOptions.DontRequireReceiver);
-                }
-                else
-                {
-                    target = hit.collider.GetComponentInParent<MyTargetScript>();
-                    target?.SendMessage("ApplyDamageAtPoint", hit.point, SendMessageOptions.DontRequireReceiver);
+                    // Вызываем правильный метод из MyTargetScript
+                    target.ApplyDamage(hit.point);
+                    
+                    if (showDebugInfo)
+                    {
+                        Debug.Log($"Попадание в мишень! Точка: {hit.point}");
+                    }
                 }
             }
         }
 
-        void TestHit(MyTargetScript target, Vector3 point, string testName)
-        {
-            Debug.Log($"\n=== Тест: {testName} ===");
-
-            target.SendMessage("ApplyDamageAtPoint", point, SendMessageOptions.DontRequireReceiver);
-        }
-
         void OnGUI()
         {
-            GUILayout.BeginArea(new Rect(300, 10, 400, 400));
+            GUILayout.BeginArea(new Rect(300, 10, 400, 200));
 
             GUILayout.Label("=== ТЕСТИРОВАНИЕ МИШЕНИ ===");
             GUILayout.Label("T - Попадание лучом (мышь)");
-            GUILayout.Label("R - Сбросить счет");
+            GUILayout.Label("R - Сбросить счёт");
 
             if (ScoreManager.Instance != null)
             {
                 GUILayout.Space(10);
-                GUILayout.Label($"Счет: {ScoreManager.Instance.GetCurrentScore()}");
-                GUILayout.Label($"Точность: {ScoreManager.Instance.GetAverageAccuracy():F1}%");
+                GUILayout.Label($"Счёт: {ScoreManager.Instance.GetCurrentScore()}");
             }
 
             // Информация о мишени под курсором
@@ -86,13 +81,14 @@ namespace Valve.VR.InteractionSystem
                 if (Physics.Raycast(ray, out hit, raycastDistance))
                 {
                     MyTargetScript target = hit.collider.GetComponent<MyTargetScript>();
+                    if (target == null)
+                        target = hit.collider.GetComponentInParent<MyTargetScript>();
+
                     if (target != null && target.targetCenter != null)
                     {
                         GUILayout.Space(10);
-
-                        float distance3D = Vector3.Distance(hit.point, target.targetCenter.position);
-                        GUILayout.Label($"3D расстояние: {distance3D:F3}m");
-
+                        float distance = Vector3.Distance(hit.point, target.targetCenter.position);
+                        GUILayout.Label($"Расстояние до центра: {distance:F3}м");
                     }
                 }
             }
