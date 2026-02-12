@@ -113,7 +113,7 @@ namespace Valve.VR.InteractionSystem
         void UpdateAllDisplays()
         {
             if (scoreText != null)
-                scoreText.text = $"Score: {currentScore}";
+                scoreText.text = $"Счет: {currentScore}";
 
             if (accuracyText != null)
                 accuracyText.text = $"Accuracy: {averageAccuracy:F1}%";
@@ -176,7 +176,7 @@ namespace Valve.VR.InteractionSystem
         // Полная статистика
         public string GetFullStats()
         {
-            return $"Score: {currentScore}\n" +
+            return $"Cчет: {currentScore}\n" +
                    $"Hits: {totalHits}\n" +
                    $"Accuracy: {averageAccuracy:F1}%";
         }
