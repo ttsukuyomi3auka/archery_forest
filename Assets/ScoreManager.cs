@@ -48,9 +48,6 @@ namespace Valve.VR.InteractionSystem
         {
             currentScore += points;
             UpdateDisplay();
-            StartCoroutine(ScoreEffect(points));
-            
-            Debug.Log($"Добавлено {points} очков. Всего: {currentScore}");
         }
 
         // Сбросить счёт
@@ -58,7 +55,6 @@ namespace Valve.VR.InteractionSystem
         {
             currentScore = 0;
             UpdateDisplay();
-            Debug.Log("Счёт сброшен");
         }
 
         // Обновить UI
@@ -66,27 +62,6 @@ namespace Valve.VR.InteractionSystem
         {
             if (scoreText != null)
                 scoreText.text = $"Счет: {currentScore}";
-        }
-
-        // Визуальный эффект при добавлении очков
-        IEnumerator ScoreEffect(int points)
-        {
-            if (scoreText == null) yield break;
-
-            Color originalColor = scoreText.color;
-            Vector3 originalScale = scoreText.transform.localScale;
-
-            scoreText.color = Color.green;
-            scoreText.transform.localScale = originalScale * 1.2f;
-
-            string originalText = scoreText.text;
-            scoreText.text = $"+{points}!\n{originalText}";
-
-            yield return new WaitForSeconds(0.2f);
-
-            scoreText.color = originalColor;
-            scoreText.transform.localScale = originalScale;
-            scoreText.text = originalText;
         }
 
         // Геттер для получения текущего счёта

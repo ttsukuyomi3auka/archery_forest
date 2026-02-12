@@ -49,14 +49,10 @@ namespace Valve.VR.InteractionSystem
             if (ScoreManager.Instance != null)
             {
                 ScoreManager.Instance.ResetScore();
-                Debug.Log("Кнопка нажата! Счет сброшен.");
             }
             
             // Возврат объектов
             ResetAllObjects();
-            
-            // Событие
-            onButtonPressed.Invoke();
             
             // Разблокируем кнопку
             isPressed = false;
@@ -88,8 +84,6 @@ namespace Valve.VR.InteractionSystem
                     }
                 }
             }
-            
-            Debug.Log("Объекты возвращены на исходные позиции");
         }
     }
 }

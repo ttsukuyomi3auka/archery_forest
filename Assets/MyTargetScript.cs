@@ -107,24 +107,5 @@ namespace Valve.VR.InteractionSystem
                 scoreManager.AddScore(score);
             }
         }
-
-        void OnDrawGizmosSelected()
-        {
-            if (scoreZones == null || scoreZones.Length == 0)
-                InitializeScoreZones();
-
-            if (targetCenter == null) return;
-
-            Vector3 center = targetCenter.position;
-
-            foreach (var zone in scoreZones)
-            {
-                Gizmos.color = zone.gizmoColor;
-                Gizmos.DrawWireSphere(center, zone.radius);
-            }
-
-            Gizmos.color = Color.red;
-            Gizmos.DrawSphere(center, 0.01f);
-        }
     }
 }
